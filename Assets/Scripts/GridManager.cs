@@ -25,14 +25,51 @@ public class GridManager : MonoBehaviour
 
     void SpawnTileAt(int x, int y)
     {
-        var go = Instantiate(tilePrefab, transform);
+        GameObject go;
+        if (tilePrefab != null)
+        {
+            go = Instantiate(tilePrefab, transform);
+        }
+        else
+        {
+            go = CreateRuntimeTile();
+            go.transform.SetParent(transform, false);
+        }
+
         go.transform.localPosition = new Vector3(x * spacing, y * spacing, 0);
         var tile = go.GetComponent<Tile>();
+        if (tile == null) tile = go.AddComponent<Tile>();
         tile.x = x; tile.y = y;
         // assign random color id and visual color
         int id = Random.Range(0, 5);
+        var sr = go.GetComponent<SpriteRenderer>();
+        if (sr != null) sr.color = ColorFromId(id);
         tile.SetColor(id, ColorFromId(id));
         tiles[x, y] = tile;
+    }
+
+    GameObject CreateRuntimeTile()
+    {
+        var go = new GameObject("Tile_Runtime");
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = GetDefaultSprite();
+        go.AddComponent<CircleCollider2D>();
+        go.AddComponent<Tile>();
+        go.transform.localScale = Vector3.one * 0.9f;
+        return go;
+    }
+
+    static Sprite defaultSprite;
+    Sprite GetDefaultSprite()
+    {
+        if (defaultSprite != null) return defaultSprite;
+        var tex = new Texture2D(32, 32);
+        var cols = tex.GetPixels();
+        for (int i = 0; i < cols.Length; i++) cols[i] = Color.white;
+        tex.SetPixels(cols);
+        tex.Apply();
+        defaultSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+        return defaultSprite;
     }
 
     Color ColorFromId(int id)
